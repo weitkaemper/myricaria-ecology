@@ -1,0 +1,184 @@
+/*
+This program performs logistic regression using Iteratively reweighted least squares (IRLS)
+(see https://en.wikipedia.org/wiki/Logistic_regression
+Murphy, Kevin P. (2012). Machine Learning – A Probabilistic Perspective. The MIT Press)
+
+It also includes predicate generate_data(N,Variance,Coeff,X,Y)
+that generates an N-row dataset with predictor variables in matrix X
+and predicted variable in list Y.
+The predicted variable is computed with the formula
+Y=(Coeff dotprod X+Noise>0->1;0)
+
+Variance is the variance of Noise
+
+Predicate example_log_r(N,Coeff) is used to test the algorithm for logistic regression and
+dataset generation: it generates a N-row dataset with 5 as the noise variance and
+coefficients [1,2,3].
+Then it performs 10 iterations of logistic regression
+Coeff is the output of regression and should be a list of three numbers close to [1,2,3]
+The higher N is, the closer to [1,2,3] Coeff should be
+
+*/
+%:- module(my_logistic,[logistic_regression/4]).
+:- import length/2, flatten/2 from basics.
+:- import sum_list/2, maplist/3, maplist/4, foldl/5 from swi.
+:- use_module(matrix,[matrix_multiply/3,matrix_inversion/2,matrix_diagonal/2, transpose/2, list0/2]).
+:- import format/2 from format.
+%:- import {}/1 from clpr.
+
+/** <examples>
+?- example_log_r(100,Coeff).
+it should return [1,2,3]
+
+*/
+
+
+
+
+%%  logistic_regression(+X,+Y,+It,-Coeff) is det.
+% perform It iterations of logistic regression on data X,Y and return the coefficients in Coeff
+% X is a matrix with one row per example and one entry per predictor variable except for
+% the last one that should always be 1 (used for the intercept).
+% Y is a vector with one element per example encoding the class (0 or 1)
+% So X is
+% [[x_1(1),x_2(1),...,1],
+%  [x_1(2),x_2(2),...,1],
+%  ...
+%  [x_1(N),x_2(N),...,1]]
+% and Y is
+% Y=[y(1),y(2),...,y(N)]
+%
+logistic_regression(X,Y,Iterations,Coeff):-
+    transpose(X,XT),
+    X=[Row1|_],
+    length(Row1,N),
+    list0(N,Coeff0),
+    logistic_regression_iter(0,Iterations,X,XT,Y,Coeff0,Coeff).
+
+
+logistic_regression_iter(Iterations,Iterations,_X,_XT,_Y,Coeff,Coeff):-!.
+
+logistic_regression_iter(I,Iterations,X,XT,Y,Coeff0,Coeff):-
+    generate_nu(X,Coeff0,Nu),
+    maplist(logistic,Nu,Mu),
+    generate_s(Mu,S_vec),
+    generate_zs(Nu,Y,Mu,S_vec,ZS),
+    matrix_diagonal(S_vec,S),
+    matrix_multiply(XT,S,XTS),
+    matrix_multiply(XTS,X,XTSX),
+    matrix_inversion(XTSX,XTSX_1),
+    matrix_multiply(XTSX_1,XT,XTSX_1XT),
+    transpose([ZS],ZST),
+    matrix_multiply(XTSX_1XT,ZST,Coeff1T),
+    transpose(Coeff1T,[Coeff1]),
+    compute_log_lik(Mu,Y,LL),
+    compute_aic(Coeff1,LL,AIC),
+    compute_accuracy(Mu,Y,Acc),
+    I1 is I+1,
+    format("Iteration ~d, log likelihood ~7f, AIC ~7f, accuracy ~5f~n",[I1,LL,AIC,Acc]),
+	logistic_regression_iter(I1,Iterations,X,XT,Y,Coeff1,Coeff).
+
+
+compute_accuracy(Mu,Y,Acc):-
+    foldl(correct,Mu,Y,0,Correct),
+    length(Y,N),
+    Acc is Correct/N.
+
+correct(Mu,Y,C0,C):-
+    (Mu>0.5->
+	(Y=1->
+		C is C0+1
+        ;
+		C is C0
+        )
+    ;
+	(Y=0->
+		C is C0+1
+        ;
+		C is C0
+        )
+	).
+
+compute_log_lik(Mu,Y,LL):-
+    foldl(log_lik,Mu,Y,0,LL).
+
+compute_aic(Coeff,LL,AIC) :-
+    length(Coeff,K),
+    AIC is 2*K - LL.
+
+log_lik(Mu,Y,LL0,LL):-
+    (Y=1->
+	LL is LL0+log(Mu)
+    ;
+	LL is LL0+log(1-Mu)
+    ).
+
+generate_nu(X,W,Mu):-
+    maplist(gen_nu_i(W),X,Mu).
+
+gen_nu_i(W,X_i,Nu_i):-
+    foldl(prod,W,X_i,0,Nu_i).
+
+generate_s(Mu,S_vec):-
+    mu_1_mu_all(Mu,S_vec).
+
+mu_1_mu(Mu_i,S_i):-
+    S_i is Mu_i*(1-Mu_i).
+mu_1_mu_all([],[]).
+mu_1_mu_all([Mu_i|T1],[S_i|T2]) :-
+    mu_1_mu(Mu_i,S_i),
+    mu_1_mu_all(T1,T2).
+
+generate_zs(Nu,Y,Mu,S_vec,ZS):-
+    gen_xs_all(Nu,Y,Mu,S_vec,ZS).
+
+gen_xs(Nu,Y,Mu,S_vec,ZS):-
+    ZS is S_vec*Nu +(Y-Mu).
+
+gen_xs_all([],[],[],[],[]).
+gen_xs_all([Nu|T1],[Y|T2],[Mu|T3],[S_vec|T4],[ZS|T5]) :-
+    gen_xs(Nu,Y,Mu,S_vec,ZS),
+    gen_xs_all(T1,T2,T3,T4,T5).
+
+logistic(X,Sigma_X):-
+    Sigma_X is 1/(1+exp(-X)).
+
+prod(A,X,Y0,Y):-
+    Y is Y0+ A*X.
+
+/* Linear regression */
+linear_regression(X,Y,Coeff):-
+    transpose(X,XT),
+    matrix_multiply(XT,X,XTX),
+    matrix_inversion(XTX,XTX_1),
+    matrix_multiply(XTX_1,XT,XTX_1XT),
+    transpose([Y],YT),
+    matrix_multiply(XTX_1XT,YT,CoeffT),
+    transpose(CoeffT,[Coeff]).
+
+lin_prediction(Coeff,X,Y) :-
+    transpose([Coeff],CoeffT),
+    matrix_multiply(X,CoeffT,M),
+    flatten(M,Y).
+
+rss(YPre,Y,RSS) :-
+    vec_diff(YPre,Y,Diff),
+    maplist(square,Diff,YSq),
+    sum(YSq,RSS).
+
+square(X,XSq) :-
+    XSq is X*X.
+
+vec_diff([],[],[]).
+vec_diff([A|As],[B|Bs],[C|Cs]) :-
+    C is A-B,
+    vec_diff(As,Bs,Cs).
+
+sum(L,N) :-
+    sum(L,0,N).
+sum([],Acc,Acc).
+sum([A|As],Acc,N) :-
+    NewAcc is Acc + A,
+    sum(As,NewAcc,N).
+
+

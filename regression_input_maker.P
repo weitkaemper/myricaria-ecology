@@ -1,0 +1,112 @@
+%:- [timestep_utilities].
+:- import member/2 from lists.
+
+explanatories(Site,List) :-
+    check_bool(protected(Site),Prot),
+    entry(Site,2009,wid,Chan),
+    entry(Site,2009,cor,Corr),
+    check_bool(concrete_river_banks(Site),CRB),
+    entry(Site,2009,bm,UpsD),
+    entry(Site,2009,bv,DowD),
+    entry(Site,2009,ele,Alt),
+    check_bool(far_from_upstream_dam(Site),FarUpsD),
+    check_bool(far_from_downstream_dam(Site),FarDowD),
+    InvUpsD is 1/UpsD,
+    InvDowD is 1/DowD,
+    Dam is UpsD + DowD,
+    check_bool(rv_system(Site,tn),Tn),
+%   check_bool(rv_system(Site,bl),Bl),
+%   check_bool(rv_system(Site,vi),Vi),
+%   check_bool(rv_system(Site,pd),Pd),
+    List = [UpsD,DowD,1].
+
+/* Disappearance events */
+disappeared_vectors(X,Y) :-
+    findall(Site-Year,
+            (useful_site(Site), entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD), useful_year(Year), useful_disappeared(Site,Year)),
+           SiteYears
+           ),
+    findall(List,
+            (   member(Site-Year,SiteYears), explanatories(Site,List)),
+            X),
+    findall(D,
+            (   member(Site-Year,SiteYears), check_bool(young_disappeared(Site,Year),D)),
+            Y).
+
+disappeared_vectors(Sys,X,Y) :-
+    findall(Site-Year,
+            (useful_site(Site), rv_system(Site,Sys),entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD), useful_year(Year), useful_disappeared(Site,Year)),
+           SiteYears
+           ),
+    findall(List,
+            (   member(Site-Year,SiteYears), explanatories(Site,List)),
+            X),
+    findall(D,
+            (   member(Site-Year,SiteYears), check_bool(young_disappeared(Site,Year),D)),
+            Y).
+
+
+/* Appearance events */
+appeared_vectors(X,Y) :-
+    findall(Site-Year,
+            (useful_site(Site), entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD), useful_year(Year), useful_appeared(Site,Year)),
+           SiteYears
+           ),
+    findall(List,
+            (   member(Site-Year,SiteYears), explanatories(Site,List)),
+            X),
+    findall(D,
+            (   member(Site-Year,SiteYears), check_bool(young_appeared(Site,Year),D)),
+            Y).
+
+appeared_vectors(Sys,X,Y) :-
+    findall(Site-Year,
+            (useful_site(Site), rv_system(Site,Sys),entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD), useful_year(Year), useful_appeared(Site,Year)),
+           SiteYears
+           ),
+    findall(List,
+            (   member(Site-Year,SiteYears), explanatories(Site,List)),
+            X),
+    findall(D,
+            (   member(Site-Year,SiteYears), check_bool(young_appeared(Site,Year),D)),
+            Y).
+
+/* Channel width */
+channel_vectors(X,Y) :-
+    findall(Site,
+            (useful_site(Site), entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD)),
+           Sites
+           ),
+    findall(List,
+            (   member(Site,Sites), explanatories(Site,List)),
+            X),
+    findall(Chan,
+            (   member(Site,Sites), entry(Site,2009,wid,Chan)),
+            Y).
+
+dam_vectors(X,Y) :-
+    findall(Site,
+            (useful_site(Site), entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD)),
+           Sites
+           ),
+    findall(List,
+            (   member(Site,Sites), explanatories(Site,List)),
+            X),
+    findall(Dam,
+            (   member(Site,Sites),     entry(Site,2009,bm,UpsD),    entry(Site,2009,bv,DowD), Dam is UpsD + DowD
+),
+            Y).
+
+
+
+check_bool(P,1) :-
+    call(P).
+check_bool(P,0) :-
+    \+ call(P).
+
+
+
+
+
+
+

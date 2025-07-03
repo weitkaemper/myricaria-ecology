@@ -1,0 +1,206 @@
+:- import load_dsv/3 from proc_files.
+:- import ith/3, atom_prefix/2 from basics.
+:- table site/1, useful_site/1, year/1, useful_year/1, useful_disappeared/2.
+
+/* Loading a semicolon-delimited copy of the extended dataset */
+load_ssv(F,P,O) :-
+    load_dsv(F,P,[separator(;),titles|O]).
+
+load_rows(F) :-
+    load_ssv(F,row(atom,integer,integer,integer,float,float,integer,integer,integer,integer,integer,integer,integer,integer,integer,integer),[]).
+
+/* Facts for the database */
+
+entry(Site,Year,Spec,Entry) :-
+    Row = row(Site,Year,_,_,_,_,_,_,_,_,_,_,_,_,_,_),
+    once(call(Row)),
+    Row =.. [_|Args],
+    once(ith(I,[site,year,adult,young,cox,coy,ele,len,pre,pro,wid,cor,spm,spr,bm,bv],Spec)),
+    ith(I,Args,Entry).
+
+site(Site) :-
+    row(Site,2009,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
+
+useful_site(Site) :-
+    site(Site).
+
+year(Year) :-
+    row(_,Year,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
+
+useful_year(Year) :-
+    year(Year),
+    Year \= 2009.
+
+useful_disappeared(Site,Year) :-
+    young_disappeared(Site,Year).
+useful_disappeared(Site,Year) :-
+    no_young_disappeared(Site,Year).
+
+useful_appeared(Site,Year) :-
+    young_appeared(Site,Year).
+useful_appeared(Site,Year) :-
+    no_young_appeared(Site,Year).
+
+adult(Site,Year) :-
+    entry(Site,Year,adult,N),
+    integer(N),
+    N > 0.
+no_adult(Site,Year) :-
+    entry(Site,Year,adult,0).
+opp(adult(Site,Year)) :- no_adult(Site,Year).
+opp(no_adult(Site,Year)) :- adult(Site,Year).
+
+young(Site,Year) :-
+    entry(Site,Year,young,N),
+    integer(N),
+    N > 0.
+no_young(Site,Year) :-
+    entry(Site,Year,young,0).
+opp(young(Site,Year)) :- no_young(Site,Year).
+opp(no_young(Site,Year)) :- young(Site,Year).
+
+
+old_population(Site) :-
+    entry(Site,2009,pre,1).
+
+protected(Site) :-
+    entry(Site,2009,pro,1).
+unprotected(Site) :-
+    entry(Site,2009,pro,0).
+opp(protected(Site)) :- unprotected(Site).
+opp(unprotected(Site)) :- protected(Site).
+
+wide_channel(Site) :-
+    entry(Site,2009,wid,N),
+    integer(N),
+    N > 70.
+narrow_channel(Site) :-
+    entry(Site,2009,wid,N),
+    integer(N),
+    N =< 70.
+opp(wide_channel(Site)) :- narrow_channel(Site).
+opp(narrow_channel(Site)) :- wide_channel(Site).
+
+wide_corridor(Site) :-
+    entry(Site,2009,cor,N),
+    integer(N),
+    N > 70.
+narrow_corridor(Site) :-
+    entry(Site,2009,cor,N),
+    integer(N),
+    N =< 70.
+opp(wide_corridor(Site)) :- narrow_corridor(Site).
+opp(narrow_corridor(Site)) :- wide_corridor(Site).
+
+concrete_river_banks(Site) :-
+    entry(Site,2009,spm,1).
+no_concrete_river_banks(Site) :-
+    entry(Site,2009,spm,0).
+opp(concrete_river_banks(Site)) :- no_concrete_river_banks(Site).
+opp(no_concrete_river_banks(Site)) :- concrete_river_banks(Site).
+
+flood_levees(Site) :-
+    entry(Site,2009,spr,1).
+no_flood_levees(Site) :-
+    entry(Site,2009,spr,0).
+opp(flood_levees(Site)) :- no_flood_levees(Site).
+opp(no_flood_levees(Site)) :- flood_levees(Site).
+
+
+adult_last(Site,Year) :-
+    LastYear is Year - 1,
+    adult(Site,LastYear).
+no_adult_last(Site,Year) :-
+    LastYear is Year - 1,
+    no_adult(Site,LastYear).
+opp(adult_last(Site,Year)) :- no_adult_last(Site,Year).
+opp(no_adult_last(Site,Year)) :- adult_last(Site,Year).
+
+young_last(Site,Year) :-
+    LastYear is Year - 1,
+    young(Site,LastYear).
+no_young_last(Site,Year) :-
+    LastYear is Year - 1,
+    no_young(Site,LastYear).
+opp(young_last(Site,Year)) :- no_young_last(Site,Year).
+opp(no_young_last(Site,Year)) :- young_last(Site,Year).
+
+close_to_upstream_dam(Site) :-
+    entry(Site,2009,bm,D),
+    integer(D),
+    D < 1000.
+far_from_upstream_dam(Site) :-
+    entry(Site,2009,bm,D),
+    integer(D),
+    D >= 1000.
+opp(close_to_upstream_dam(Site)) :- far_from_upstream_dam(Site).
+opp(far_from_upstream_dam(Site)) :- close_to_upstream_dam(Site).
+
+close_to_downstream_dam(Site) :-
+    entry(Site,2009,bv,D),
+    integer(D),
+    D < 1000.
+far_from_downstream_dam(Site) :-
+    entry(Site,2009,bv,D),
+    integer(D),
+    D >= 1000.
+opp(close_to_downstream_dam(Site)) :- far_from_downstream_dam(Site).
+opp(far_from_downstream_dam(Site)) :- close_to_downstream_dam(Site).
+
+young_appeared(Site,Year) :-
+    no_young_last(Site,Year),
+    young(Site,Year).
+no_young_appeared(Site,Year) :-
+    no_young_last(Site,Year),
+    no_young(Site,Year).
+opp(young_appeared(Site,Year)) :- no_young_appeared(Site,Year).
+opp(no_young_appeared(Site,Year)) :- young_appeared(Site,Year).
+
+young_disappeared(Site,Year) :-
+    young_last(Site,Year),
+    no_young(Site,Year).
+no_young_disappeared(Site,Year) :-
+    young_last(Site,Year),
+    young(Site,Year).
+opp(young_disappeared(Site,Year)) :- no_young_disappeared(Site,Year).
+opp(no_young_disappeared(Site,Year)) :- young_disappeared(Site,Year).
+
+
+rv_system(Site,System) :-
+    rv_system(System),
+    atom_prefix(Site,System).
+
+rv_system(bz).
+rv_system(tn).
+rv_system(bl).
+rv_system(vi).
+rv_system(pd).
+
+distance(Site1,Site2,D) :-
+    entry(Site1,2009,cox,X1),
+    entry(Site1,2009,coy,Y1),
+    entry(Site2,2009,cox,X2),
+    entry(Site2,2009,coy,Y2),
+    D is sqrt((X1 - X2)*(X1 - X2) + (Y1 - Y2)*(Y1 - Y2)).
+
+closeby(Site1,Site2) :-
+    site(Site1),
+    site(Site2),
+    distance(Site1,Site2,D),
+    D < 0.1.
+
+plant_closeby(Site,Year) :-
+    closeby(Site,Site1),
+    adult_last(Site1,Year).
+
+
+
+
+
+
+
+
+
+
+
+
