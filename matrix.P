@@ -1,3 +1,5 @@
+/* This is a port to XSB of Fabrizio Riguzzi's SWI-Prolog Matrix pack, whose header is reproduced below. The port has been performed by Felix Weitkämper and is also licensed under the Artistic License 2.0 */  
+
 :- export matrix_multiply/3, matrix_inversion/2, matrix_diagonal/2, transpose/2, list0/2.
 /** <module> matrix
 
