@@ -1,5 +1,11 @@
 ## This document provides some explanation for fitting the logistic regression model using the XSB Prolog system.
 
+To run the code in this repository, you need to install a recent version (tested with 5.0) of the XSB Prolog system, available at https://xsb.sourceforge.net/
+
+The instructions below assume that XSB has been started on the command line. To make more than basic, replicating use of the code, at least basic knowledge of the Prolog programming language is very helpful. 
+
+----
+
 The data is provided in (semicolon-delimited) DSV format.
 
 ----
