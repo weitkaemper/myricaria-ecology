@@ -2,15 +2,12 @@
 
 The file `matrix.P` is a port of Fabrizio Riguzzi's `matrix` pack for SWI-Prolog, which is available at https://github.com/friguzzi/matrix.
 
-The regression code is an adapted  port of Fabrizio Riguzzi's code for linear and logistic regression, available at 
-https://cplint.eu/p/linear_regression.pl
-and 
-https://cplint.eu/p/logistic_regression.pl
-respectively. 
+The regression code is an adapted  port of Fabrizio Riguzzi's code for linear and logistic regression, available at
+https://github.com/friguzzi/logistic_regression.
 
 Compared to the original, our version omits the simulation and testing code and includes implementations for computing the AIC and F statistics for logistics and linear regression respectively.
 
-Our modified software and the standard software of Fabrizio Riguzzi is available under the Artistic License 2.0, reproduced in full below:
+Our modified software and the matrix pack of Fabrizio Riguzzi are available under the Artistic License 2.0, reproduced in full below, while the code at https://github.com/friguzzi/logistic_regression is available under the MIT license. 
 
 ## License
 
