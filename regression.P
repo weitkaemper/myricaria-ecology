@@ -166,6 +166,12 @@ rss(YPre,Y,RSS) :-
     maplist(square,Diff,YSq),
     sum(YSq,RSS).
 
+lin_aic([X0|_],Y,RSS,AIC) :-
+    length(Y,N),
+    length(X0,K),
+    AIC is N*log(RSS/N) + 2*K.
+
+
 square(X,XSq) :-
     XSq is X*X.
 

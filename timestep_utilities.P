@@ -1,4 +1,4 @@
-:- import load_dsv/3 from proc_files.
+:- import load_dsv/3, add_cvt_type_hook/2, remove_cvt_type_hook/1 from proc_files.
 :- import ith/3, atom_prefix/2 from basics.
 :- table site/1, useful_site/1, year/1, useful_year/1, useful_disappeared/2.
 
@@ -7,7 +7,9 @@ load_ssv(F,P,O) :-
     load_dsv(F,P,[separator(;),titles|O]).
 
 load_rows(F) :-
-    load_ssv(F,row(atom,integer,integer,integer,float,float,integer,integer,integer,integer,integer,integer,integer,integer,integer,integer),[]).
+    remove_cvt_type_hook(maybe_num),
+    add_cvt_type_hook(maybe_num,atom_mnum(_,_)),
+    load_ssv(F,row(atom,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num),[]).
 
 /* Facts for the database */
 
@@ -196,7 +198,14 @@ plant_closeby(Site,Year) :-
 
 
 
+/* CSV Processing Utilities */
 
+atom_mnum(X,N) :-
+    is_number_atom(X),
+    !,
+    atom_codes(X,Codes),
+    number_codes(N,Codes).
+atom_mnum(X,X).
 
 
 
