@@ -43,6 +43,13 @@ useful_appeared(Site,Year) :-
 useful_appeared(Site,Year) :-
     no_young_appeared(Site,Year).
 
+check_dam(Site) :-
+    entry(Site,2009,bm,N),
+    number(N).
+no_check_dam(Site) :-
+    entry(Site,2009,bm,N),
+    \+ number(N).
+
 adult(Site,Year) :-
     entry(Site,Year,adult,N),
     integer(N),
@@ -195,8 +202,19 @@ plant_closeby(Site,Year) :-
     closeby(Site,Site1),
     adult_last(Site1,Year).
 
+safe_UpsD(Site,UpsD) :-
+    entry(Site,2009,bm,UpsD),
+    number(UpsD).
+safe_UpsD(Site,0) :-
+    entry(Site,2009,bm,UpsD),
+    \+ number(UpsD).
 
-
+safe_DowD(Site,DowD) :-
+    entry(Site,2009,bv,DowD),
+    number(DowD).
+safe_DowD(Site,0) :-
+    entry(Site,2009,bv,DowD),
+    \+ number(DowD).
 
 /* CSV Processing Utilities */
 

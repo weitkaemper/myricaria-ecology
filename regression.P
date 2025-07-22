@@ -188,3 +188,9 @@ sum([A|As],Acc,N) :-
     sum(As,NewAcc,N).
 
 
+sublist([],[]).
+sublist([X|SubList],[X|Xs]) :-
+    sublist(SubList,Xs).
+sublist(SubList,[_|Xs]) :-
+    sublist(SubList,Xs).
+
