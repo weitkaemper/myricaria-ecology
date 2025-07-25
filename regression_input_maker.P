@@ -1,23 +1,25 @@
 %:- [timestep_utilities].
 :- import member/2 from lists.
 
+
 explanatories(Site,List) :-
-    check_bool(protected(Site),Prot),
+    check_bool(protected,Site,Prot),
     entry(Site,2009,wid,Chan),
     entry(Site,2009,cor,Corr),
-    check_bool(concrete_river_banks(Site),CRB),
-    check_bool(flood_levees(Site),Levees),
-    check_bool(check_dam(Site),Dam),
+    check_bool(concrete_river_banks,Site,CRB),
+    check_bool(flood_levees,Site,Levees),
+    check_bool(check_dam,Site,Dam),
     safe_UpsD(Site,UpsD),
     safe_DowD(Site,DowD),
     entry(Site,2009,ele,Alt),
 %   check_bool(far_from_upstream_dam(Site),FarUpsD),
 %   check_bool(far_from_downstream_dam(Site),FarDowD),
     AvgDam is UpsD + DowD,
-%   check_bool(rv_system(Site,tn),Tn),
-%   check_bool(rv_system(Site,bl),Bl),
-%   check_bool(rv_system(Site,vi),Vi),
-%   check_bool(rv_system(Site,pd),Pd),
+   check_bool(rv_system(tn),Site,Tn),
+   check_bool(rv_system(bl),Site,Bl),
+   check_bool(rv_system(vi),Site,Vi),
+   check_bool(rv_system(pd),Site,Pd),
+   check_bool(rv_system(av),Site,Av),
     List = [Alt,Prot,CRB,Dam,AvgDam,1].
 
 
@@ -75,7 +77,7 @@ appeared_vectors(Sys,X,Y) :-
 /* Channel width */
 channel_vectors(X,Y) :-
     findall(Site,
-            (useful_site(Site), entry(Site,2009,wid,Chan), integer(Chan)),
+            (useful_site(Site), entry(Site,2009,wid,Chan), number(Chan)),
            Sites
            ),
     findall(List,
@@ -98,12 +100,6 @@ dam_vectors(X,Y) :-
 ),
             Y).
 
-
-
-check_bool(P,1) :-
-    call(P).
-check_bool(P,0) :-
-    \+ call(P).
 
 
 

@@ -20,6 +20,9 @@ entry(Site,Year,Spec,Entry) :-
     once(ith(I,[site,year,adult,young,cox,coy,ele,len,pre,pro,wid,cor,spm,spr,bm,bv],Spec)),
     ith(I,Args,Entry).
 
+entry_(Year,Spec,Site,Entry) :-
+    entry(Site,Year,Spec,Entry).
+
 site(Site) :-
     row(Site,2009,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
 
@@ -43,12 +46,28 @@ useful_appeared(Site,Year) :-
 useful_appeared(Site,Year) :-
     no_young_appeared(Site,Year).
 
-check_dam(Site) :-
+check_dam_Ups(Site) :-
     entry(Site,2009,bm,N),
     number(N).
+check_dam_Dow(Site) :-
+    entry(Site,2009,bv,N),
+    number(N).
+check_dam(Site) :-
+    check_dam_Ups(Site),
+    !.
+check_dam(Site) :-
+    check_dam_Dow(Site),
+    !.
+
+check_dam_both(Site) :-
+    check_dam_Ups(Site),
+    check_dam_Dow(Site).
+
 no_check_dam(Site) :-
-    entry(Site,2009,bm,N),
-    \+ number(N).
+    entry(Site,2009,bm,N1),
+    entry(Site,2009,bv,N2),
+    \+ number(N1),
+    \+ number(N2).
 
 adult(Site,Year) :-
     entry(Site,Year,adult,N),
@@ -175,7 +194,7 @@ opp(young_disappeared(Site,Year)) :- no_young_disappeared(Site,Year).
 opp(no_young_disappeared(Site,Year)) :- young_disappeared(Site,Year).
 
 
-rv_system(Site,System) :-
+rv_system(System,Site) :-
     rv_system(System),
     atom_prefix(Site,System).
 
@@ -184,6 +203,7 @@ rv_system(tn).
 rv_system(bl).
 rv_system(vi).
 rv_system(pd).
+rv_system(av).
 
 distance(Site1,Site2,D) :-
     entry(Site1,2009,cox,X1),
@@ -215,6 +235,22 @@ safe_DowD(Site,DowD) :-
 safe_DowD(Site,0) :-
     entry(Site,2009,bv,DowD),
     \+ number(DowD).
+
+check_bool(P,X,1) :-
+    call(P,X),
+    !.
+check_bool(P,X,0) :-
+    \+ call(P,X),
+    !.
+
+
+apply_first(Pred,X-_,Out) :-
+    call(Pred,X,Out).
+
+young_disappeared(Site-Year) :-
+    young_disappeared(Site,Year).
+young_appeared(Site-Year) :-
+    young_appeared(Site,Year).
 
 /* CSV Processing Utilities */
 

@@ -48,17 +48,20 @@ it should return [1,2,3]
 % and Y is
 % Y=[y(1),y(2),...,y(N)]
 %
-logistic_regression(X,Y,Iterations,Coeff):-
+logistic_regression(X,Y,Iterations,Coeff) :-
+    logistic_regression(X,Y,Iterations,Coeff,_,_).
+
+logistic_regression(X,Y,Iterations,Coeff,LL,AIC):-
     transpose(X,XT),
     X=[Row1|_],
     length(Row1,N),
     list0(N,Coeff0),
-    logistic_regression_iter(0,Iterations,X,XT,Y,Coeff0,Coeff).
+    logistic_regression_iter(0,Iterations,X,XT,Y,Coeff0,0,0,Coeff,LL,AIC).
 
 
-logistic_regression_iter(Iterations,Iterations,_X,_XT,_Y,Coeff,Coeff):-!.
+logistic_regression_iter(Iterations,Iterations,_X,_XT,_Y,Coeff,LL,AIC,Coeff,LL,AIC):-!.
 
-logistic_regression_iter(I,Iterations,X,XT,Y,Coeff0,Coeff):-
+logistic_regression_iter(I,Iterations,X,XT,Y,Coeff0,_,_,Coeff,LL,AIC):-
     generate_nu(X,Coeff0,Nu),
     maplist(logistic,Nu,Mu),
     generate_s(Mu,S_vec),
@@ -71,12 +74,12 @@ logistic_regression_iter(I,Iterations,X,XT,Y,Coeff0,Coeff):-
     transpose([ZS],ZST),
     matrix_multiply(XTSX_1XT,ZST,Coeff1T),
     transpose(Coeff1T,[Coeff1]),
-    compute_log_lik(Mu,Y,LL),
-    compute_aic(Coeff1,LL,AIC),
+    compute_log_lik(Mu,Y,LL1),
+    compute_aic(Coeff1,LL1,AIC1),
     compute_accuracy(Mu,Y,Acc),
     I1 is I+1,
-    format("Iteration ~d, log likelihood ~7f, AIC ~7f, accuracy ~5f~n",[I1,LL,AIC,Acc]),
-	logistic_regression_iter(I1,Iterations,X,XT,Y,Coeff1,Coeff).
+    format("Iteration ~d, log likelihood ~7f, AIC ~7f, accuracy ~5f~n",[I1,LL1,AIC1,Acc]),
+	logistic_regression_iter(I1,Iterations,X,XT,Y,Coeff1,LL1,AIC1,Coeff,LL,AIC).
 
 
 compute_accuracy(Mu,Y,Acc):-
@@ -171,6 +174,12 @@ lin_aic([X0|_],Y,RSS,AIC) :-
     length(X0,K),
     AIC is N*log(RSS/N) + 2*K.
 
+lin_aicc([X0|_],Y,RSS,AICc) :-
+    length(Y,N),
+    length(X0,K),
+    AIC is N*log(RSS/N) + 2*K,
+    AICc is AIC + (2*K*K + 2*K)/(N - K - 1).
+
 
 square(X,XSq) :-
     XSq is X*X.
@@ -193,4 +202,49 @@ sublist([X|SubList],[X|Xs]) :-
     sublist(SubList,Xs).
 sublist(SubList,[_|Xs]) :-
     sublist(SubList,Xs).
+
+all_log_models(Iterations,Entities, Features, Target, SortedResults) :-
+    findall(result(AIC,LL,FeatureList,Coeff),
+            (
+                sublist(FeatureList,Features),
+                format("Features: ~w~n", FeatureList),
+                abstract_log_regression(Iterations,Entities,FeatureList,Target,_,_,Coeff,LL,AIC)
+            ),
+            Results),
+    sort(Results,SortedResults).
+
+
+all_lin_models(Entities,Features,Target,SortedResults) :-
+    findall(result(AIC,RSS,FeatureList,Coeff),
+            (
+                sublist(FeatureList,Features),
+                abstract_lin_regression(Entities,FeatureList,Target,X,Y,Coeff),
+                lin_prediction(Coeff,X,YPre),
+                rss(YPre,Y,RSS),
+                lin_aicc(X,Y,RSS,AIC)
+            ),
+            Results),
+    sort(Results,SortedResults).
+
+abstract_log_regression(Iterations,Entities,Features,Target,X,Y,Coeff,LL,AIC) :-
+    create_regression_problem(Entities,Features,Target,X,Y),
+    logistic_regression(X,Y,Iterations,Coeff,LL,AIC).
+
+abstract_lin_regression(Entities,Features,Target,X,Y,Coeff) :-
+    create_regression_problem(Entities,Features,Target,X,Y),
+    linear_regression(X,Y,Coeff).
+
+create_regression_problem([],_,_,[],[]).
+create_regression_problem([Ent|Entities],Features,Target,[X|Xs],[Y|Ys]) :-
+    expand_features(Ent,Features,X),
+    call(Target,Ent,Y),
+    !,
+    create_regression_problem(Entities,Features,Target,Xs,Ys).
+
+expand_features(_,[],[1]).
+expand_features(Ent,[F|Fs],[X|Xs]) :-
+    call(F,Ent,X),
+    expand_features(Ent,Fs,Xs).
+
+
 
