@@ -44,5 +44,15 @@ It is loaded using the `load_rows/1` predicate provided by `mg_ec_data_utilties.
 
 The code performing the regression is contained in `regression.P`. 
 
+----
+
+The data included here was first reported in the following contributions:
+
+
+Michielon, B. and T. Sitzia (2019). “Myricaria germanica in quattro bacini idrografici alpini dell’Italia nord-orientale”. In: Gredleriana 19, pp. 35–76.
+
+Sitzia, T., B. Michielon, S. Iacopino, and D. J. Kotze (2016). “Population dynamics of the endangered shrub Myricaria germanica in a regulated Alpine river is influenced by active channel width and distance to check dams”. In: Ecological Engineering 95, pp. 828–838. issn: 0925-8574. doi: https://doi.org/10.1016/j.ecoleng.2016.06.066
+
+
 
 [![DOI](https://zenodo.org/badge/1013392331.svg)](https://doi.org/10.5281/zenodo.16460618)
