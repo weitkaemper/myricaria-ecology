@@ -44,3 +44,5 @@ It is loaded using the `load_rows/1` predicate provided by `mg_ec_data_utilties.
 
 The code performing the regression is contained in `regression.P`. 
 
+
+[![DOI](https://zenodo.org/badge/1013392331.svg)](https://doi.org/10.5281/zenodo.16460618)
