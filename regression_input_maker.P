@@ -1,104 +1,24 @@
-%:- [timestep_utilities].
-:- import member/2 from lists.
+:- include(timestep_utilities).
+:- include(regression).
 
+:- import append/3 from basics.
 
-explanatories(Site,List) :-
-    check_bool(protected,Site,Prot),
-    entry(Site,2009,wid,Chan),
-    entry(Site,2009,cor,Corr),
-    check_bool(concrete_river_banks,Site,CRB),
-    check_bool(flood_levees,Site,Levees),
-    check_bool(check_dam,Site,Dam),
-    safe_UpsD(Site,UpsD),
-    safe_DowD(Site,DowD),
-    entry(Site,2009,ele,Alt),
-%   check_bool(far_from_upstream_dam(Site),FarUpsD),
-%   check_bool(far_from_downstream_dam(Site),FarDowD),
-    AvgDam is UpsD + DowD,
-   check_bool(rv_system(tn),Site,Tn),
-   check_bool(rv_system(bl),Site,Bl),
-   check_bool(rv_system(vi),Site,Vi),
-   check_bool(rv_system(pd),Site,Pd),
-   check_bool(rv_system(av),Site,Av),
-    List = [Alt,Prot,CRB,Dam,AvgDam,1].
-
-
-/* Disappearance events */
-disappeared_vectors(X,Y) :-
+disappeared_models(SiteYears,SortedResults) :-
     findall(Site-Year,
             (useful_site(Site), entry(Site,2009,wid,Chan), integer(Chan), useful_year(Year), useful_disappeared(Site,Year)),
-           SiteYears
+            SiteYears
            ),
-    findall(List,
-            (   member(Site-Year,SiteYears), explanatories(Site,List)),
-            X),
-    findall(D,
-            (   member(Site-Year,SiteYears), check_bool(young_disappeared(Site,Year),D)),
-            Y).
+    Feats = [altitude,channel_width,protected,crb,check_dam,flood_levees],
+    all_log_models(10,SiteYears,Feats,young_disappeared,SortedResults).
 
-disappeared_vectors(Sys,X,Y) :-
-    findall(Site-Year,
-            (useful_site(Site), rv_system(Site,Sys),entry(Site,2009,wid,Chan), integer(Chan),  useful_year(Year), useful_disappeared(Site,Year)),
-           SiteYears
-           ),
-    findall(List,
-            (   member(Site-Year,SiteYears), explanatories(Site,List)),
-            X),
-    findall(D,
-            (   member(Site-Year,SiteYears), check_bool(young_disappeared(Site,Year),D)),
-            Y).
-
-
-/* Appearance events */
-appeared_vectors(X,Y) :-
-    findall(Site-Year,
-            (useful_site(Site), entry(Site,2009,wid,Chan), integer(Chan), useful_year(Year), useful_appeared(Site,Year)),
-           SiteYears
-           ),
-    findall(List,
-            (   member(Site-Year,SiteYears), explanatories(Site,List)),
-            X),
-    findall(D,
-            (   member(Site-Year,SiteYears), check_bool(young_appeared(Site,Year),D)),
-            Y).
-
-appeared_vectors(Sys,X,Y) :-
-    findall(Site-Year,
-            (useful_site(Site), rv_system(Site,Sys),entry(Site,2009,wid,Chan), integer(Chan),  useful_year(Year), useful_appeared(Site,Year)),
-           SiteYears
-           ),
-    findall(List,
-            (   member(Site-Year,SiteYears), explanatories(Site,List)),
-            X),
-    findall(D,
-            (   member(Site-Year,SiteYears), check_bool(young_appeared(Site,Year),D)),
-            Y).
-
-/* Channel width */
-channel_vectors(X,Y) :-
+channel_models(Sites,SortedResults) :-
     findall(Site,
             (useful_site(Site), entry(Site,2009,wid,Chan), number(Chan)),
-           Sites
-           ),
-    findall(List,
-            (   member(Site,Sites), explanatories(Site,List)),
-            X),
-    findall(Chan,
-            (   member(Site,Sites), entry(Site,2009,wid,Chan)),
-            Y).
-
-dam_vectors(X,Y) :-
-    findall(Site,
-            (useful_site(Site), entry(Site,2009,wid,Chan), entry(Site,2009,bm,UpsD), entry(Site,2009,bv,DowD), integer(Chan), integer(UpsD), integer(DowD)),
-           Sites
-           ),
-    findall(List,
-            (   member(Site,Sites), explanatories(Site,List)),
-            X),
-    findall(Dam,
-            (   member(Site,Sites),     entry(Site,2009,bm,UpsD),    entry(Site,2009,bv,DowD), Dam is UpsD + DowD
-),
-            Y).
+            Sites),
+    Feats = [altitude,bool_protected,bool_crb,bool_check_dam,bool_flood_levees],
+    with(alt,Feats,AltFeats),
+    append(Feats,AltFeats,FeatureList),
+    all_lin_models(Sites,FeatureList,log_channel_width,SortedResults).
 
 
 

@@ -32,6 +32,103 @@ useful_site(Site) :-
 year(Year) :-
     row(_,Year,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
 
+channel_width(Pair,Width) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    channel_width(Site,Width).
+channel_width(Site,Width) :-
+    not_pair(Site),
+    entry(Site,2009,wid,Width).
+log_channel_width(Site,LogWidth) :-
+    channel_width(Site,Width),
+    LogWidth is log(Width).
+
+altitude(Pair,Alt) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    altitude(Site,Alt).
+altitude(Site,Alt) :-
+    not_pair(Site),
+    entry(Site,2009,ele,Alt).
+
+protected(Pair,Prot) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    protected(Site,Prot).
+protected(Site,Prot) :-
+    not_pair(Site),
+    entry(Site,2009,pro,Prot).
+protected(Site) :-
+    protected(Site,1).
+unprotected(Site) :-
+    protected(Site,0).
+
+crb(Pair,CRB) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    crb(Site,CRB).
+crb(Site,CRB) :-
+    not_pair(Site),
+    entry(Site,2009,spm,CRB).
+crb(Site) :-
+    crb(Site,1).
+no_crb(Site) :-
+    crb(Site,0).
+
+young_disappeared(Pair,1) :-
+    nonvar(Pair),
+    Pair = Site-Year,
+    young_disappeared(Site,Year).
+young_disappeared(Pair,0) :-
+    nonvar(Pair),
+    Pair = Site-Year,
+    no_young_disappeared(Site,Year).
+young_disappeared(Site,Year) :-
+    young_last(Site,Year),
+    no_young(Site,Year).
+no_young_disappeared(Site,Year) :-
+    young_last(Site,Year),
+    young(Site,Year).
+young_disappeared(Site-Year) :-
+    young_disappeared(Site,Year).
+
+
+check_dam(Pair,Dam) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    check_dam(Site,Dam).
+check_dam(Site,0) :-
+    not_pair(Site),
+    no_check_dam(Site).
+check_dam(Site,1) :-
+    not_pair(Site),
+    check_dam(Site).
+check_dam(Site) :-
+    check_dam_Ups(Site),
+    !.
+check_dam(Site) :-
+    check_dam_Dow(Site),
+    !.
+no_check_dam(Site) :-
+    entry(Site,2009,bm,N1),
+    entry(Site,2009,bv,N2),
+    \+ number(N1),
+    \+ number(N2).
+
+
+
+flood_levees(Pair,FloodLevees) :-
+    nonvar(Pair),
+    Pair = Site-_,
+    flood_levees(Site,FloodLevees).
+flood_levees(Site,FloodLevees) :-
+    not_pair(Site),
+    entry(Site,2009,spr,FloodLevees).
+flood_levees(Site) :-
+    flood_levees(Site,1).
+no_flood_levees(Site) :-
+    flood_levees(Site,0).
+
 useful_year(Year) :-
     year(Year),
     Year \= 2009.
@@ -41,33 +138,18 @@ useful_disappeared(Site,Year) :-
 useful_disappeared(Site,Year) :-
     no_young_disappeared(Site,Year).
 
-useful_appeared(Site,Year) :-
-    young_appeared(Site,Year).
-useful_appeared(Site,Year) :-
-    no_young_appeared(Site,Year).
 
+% Other features that may be considered
 check_dam_Ups(Site) :-
     entry(Site,2009,bm,N),
     number(N).
 check_dam_Dow(Site) :-
     entry(Site,2009,bv,N),
     number(N).
-check_dam(Site) :-
-    check_dam_Ups(Site),
-    !.
-check_dam(Site) :-
-    check_dam_Dow(Site),
-    !.
-
 check_dam_both(Site) :-
     check_dam_Ups(Site),
     check_dam_Dow(Site).
 
-no_check_dam(Site) :-
-    entry(Site,2009,bm,N1),
-    entry(Site,2009,bv,N2),
-    \+ number(N1),
-    \+ number(N2).
 
 adult(Site,Year) :-
     entry(Site,Year,adult,N),
@@ -75,8 +157,6 @@ adult(Site,Year) :-
     N > 0.
 no_adult(Site,Year) :-
     entry(Site,Year,adult,0).
-opp(adult(Site,Year)) :- no_adult(Site,Year).
-opp(no_adult(Site,Year)) :- adult(Site,Year).
 
 young(Site,Year) :-
     entry(Site,Year,young,N),
@@ -84,19 +164,10 @@ young(Site,Year) :-
     N > 0.
 no_young(Site,Year) :-
     entry(Site,Year,young,0).
-opp(young(Site,Year)) :- no_young(Site,Year).
-opp(no_young(Site,Year)) :- young(Site,Year).
 
 
 old_population(Site) :-
     entry(Site,2009,pre,1).
-
-protected(Site) :-
-    entry(Site,2009,pro,1).
-unprotected(Site) :-
-    entry(Site,2009,pro,0).
-opp(protected(Site)) :- unprotected(Site).
-opp(unprotected(Site)) :- protected(Site).
 
 wide_channel(Site) :-
     entry(Site,2009,wid,N),
@@ -106,8 +177,6 @@ narrow_channel(Site) :-
     entry(Site,2009,wid,N),
     integer(N),
     N =< 70.
-opp(wide_channel(Site)) :- narrow_channel(Site).
-opp(narrow_channel(Site)) :- wide_channel(Site).
 
 wide_corridor(Site) :-
     entry(Site,2009,cor,N),
@@ -117,23 +186,6 @@ narrow_corridor(Site) :-
     entry(Site,2009,cor,N),
     integer(N),
     N =< 70.
-opp(wide_corridor(Site)) :- narrow_corridor(Site).
-opp(narrow_corridor(Site)) :- wide_corridor(Site).
-
-concrete_river_banks(Site) :-
-    entry(Site,2009,spm,1).
-no_concrete_river_banks(Site) :-
-    entry(Site,2009,spm,0).
-opp(concrete_river_banks(Site)) :- no_concrete_river_banks(Site).
-opp(no_concrete_river_banks(Site)) :- concrete_river_banks(Site).
-
-flood_levees(Site) :-
-    entry(Site,2009,spr,1).
-no_flood_levees(Site) :-
-    entry(Site,2009,spr,0).
-opp(flood_levees(Site)) :- no_flood_levees(Site).
-opp(no_flood_levees(Site)) :- flood_levees(Site).
-
 
 adult_last(Site,Year) :-
     LastYear is Year - 1,
@@ -141,8 +193,6 @@ adult_last(Site,Year) :-
 no_adult_last(Site,Year) :-
     LastYear is Year - 1,
     no_adult(Site,LastYear).
-opp(adult_last(Site,Year)) :- no_adult_last(Site,Year).
-opp(no_adult_last(Site,Year)) :- adult_last(Site,Year).
 
 young_last(Site,Year) :-
     LastYear is Year - 1,
@@ -150,8 +200,6 @@ young_last(Site,Year) :-
 no_young_last(Site,Year) :-
     LastYear is Year - 1,
     no_young(Site,LastYear).
-opp(young_last(Site,Year)) :- no_young_last(Site,Year).
-opp(no_young_last(Site,Year)) :- young_last(Site,Year).
 
 close_to_upstream_dam(Site) :-
     entry(Site,2009,bm,D),
@@ -161,8 +209,6 @@ far_from_upstream_dam(Site) :-
     entry(Site,2009,bm,D),
     integer(D),
     D >= 1000.
-opp(close_to_upstream_dam(Site)) :- far_from_upstream_dam(Site).
-opp(far_from_upstream_dam(Site)) :- close_to_upstream_dam(Site).
 
 close_to_downstream_dam(Site) :-
     entry(Site,2009,bv,D),
@@ -172,8 +218,6 @@ far_from_downstream_dam(Site) :-
     entry(Site,2009,bv,D),
     integer(D),
     D >= 1000.
-opp(close_to_downstream_dam(Site)) :- far_from_downstream_dam(Site).
-opp(far_from_downstream_dam(Site)) :- close_to_downstream_dam(Site).
 
 young_appeared(Site,Year) :-
     no_young_last(Site,Year),
@@ -181,17 +225,14 @@ young_appeared(Site,Year) :-
 no_young_appeared(Site,Year) :-
     no_young_last(Site,Year),
     no_young(Site,Year).
-opp(young_appeared(Site,Year)) :- no_young_appeared(Site,Year).
-opp(no_young_appeared(Site,Year)) :- young_appeared(Site,Year).
 
-young_disappeared(Site,Year) :-
-    young_last(Site,Year),
-    no_young(Site,Year).
-no_young_disappeared(Site,Year) :-
-    young_last(Site,Year),
-    young(Site,Year).
-opp(young_disappeared(Site,Year)) :- no_young_disappeared(Site,Year).
-opp(no_young_disappeared(Site,Year)) :- young_disappeared(Site,Year).
+young_appeared(Site-Year) :-
+    young_appeared(Site,Year).
+
+useful_appeared(Site,Year) :-
+    young_appeared(Site,Year).
+useful_appeared(Site,Year) :-
+    no_young_appeared(Site,Year).
 
 
 rv_system(System,Site) :-
@@ -236,21 +277,22 @@ safe_DowD(Site,0) :-
     entry(Site,2009,bv,DowD),
     \+ number(DowD).
 
-check_bool(P,X,1) :-
-    call(P,X),
-    !.
-check_bool(P,X,0) :-
-    \+ call(P,X),
-    !.
 
 
-apply_first(Pred,X-_,Out) :-
-    call(Pred,X,Out).
+with(Pred1,Pred2,Site,N) :-
+    call(Pred1,Site,N1),
+    call(Pred2,Site,N2),
+    N is N1*N2.
+% Constructing With's for input
+with(_,[],[]).
+with(Pred1,[Pred|Preds],[with(Pred1,Pred)|WPreds]) :-
+    with(Pred1,Preds,WPreds).
 
-young_disappeared(Site-Year) :-
-    young_disappeared(Site,Year).
-young_appeared(Site-Year) :-
-    young_appeared(Site,Year).
+not_pair(X) :-
+    var(X).
+not_pair(X) :-
+    nonvar(X),
+    X \= _-_.
 
 /* CSV Processing Utilities */
 
