@@ -15,8 +15,8 @@ channel_models(Sites,SortedResults) :-
     findall(Site,
             (useful_site(Site), entry(Site,2009,wid,Chan), number(Chan)),
             Sites),
-    Feats = [altitude,bool_protected,bool_crb,bool_check_dam,bool_flood_levees],
-    with(alt,Feats,AltFeats),
+    Feats = [altitude,protected,crb,check_dam,flood_levees],
+    with(altitude,Feats,AltFeats),
     append(Feats,AltFeats,FeatureList),
     all_lin_models(Sites,FeatureList,log_channel_width,SortedResults).
 
