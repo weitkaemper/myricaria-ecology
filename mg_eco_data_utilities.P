@@ -3,34 +3,31 @@
 :- table site/1, useful_site/1, year/1, useful_year/1, useful_disappeared/2.
 
 /* Loading a semicolon-delimited copy of the extended dataset */
-load_ssv(F,P,O) :-
-    load_dsv(F,P,[separator(;),titles|O]).
-
 load_rows(F) :-
     remove_cvt_type_hook(maybe_num),
     add_cvt_type_hook(maybe_num,atom_mnum(_,_)),
-    load_ssv(F,row(atom,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num),[]).
+    load_dsv(F,row(atom,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num,maybe_num),[titles]).
 
 /* Facts for the database */
 
 entry(Site,Year,Spec,Entry) :-
-    Row = row(Site,Year,_,_,_,_,_,_,_,_,_,_,_,_,_,_),
+    Row = row(Site,Year,_,_,_,_,_,_,_,_,_,_),
     once(call(Row)),
     Row =.. [_|Args],
-    once(ith(I,[site,year,adult,young,cox,coy,ele,len,pre,pro,wid,cor,spm,spr,bm,bv],Spec)),
+    once(ith(I,[site,year,cox,coy,ele,pro,wid,crb,rbp,cda,young,young_bool],Spec)),
     ith(I,Args,Entry).
 
 entry_(Year,Spec,Site,Entry) :-
     entry(Site,Year,Spec,Entry).
 
 site(Site) :-
-    row(Site,2009,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
+    row(Site,2009,_,_,_,_,_,_,_,_,_,_).
 
 useful_site(Site) :-
     site(Site).
 
 year(Year) :-
-    row(_,Year,_,_,_,_,_,_,_,_,_,_,_,_,_,_).
+    row(_,Year,_,_,_,_,_,_,_,_,_,_).
 
 channel_width(Pair,Width) :-
     nonvar(Pair),
@@ -69,7 +66,7 @@ crb(Pair,CRB) :-
     crb(Site,CRB).
 crb(Site,CRB) :-
     not_pair(Site),
-    entry(Site,2009,spm,CRB).
+    entry(Site,2009,crb,CRB).
 crb(Site) :-
     crb(Site,1).
 no_crb(Site) :-
@@ -97,24 +94,21 @@ check_dam(Pair,Dam) :-
     nonvar(Pair),
     Pair = Site-_,
     check_dam(Site,Dam).
-check_dam(Site,0) :-
-    not_pair(Site),
-    no_check_dam(Site).
-check_dam(Site,1) :-
-    not_pair(Site),
-    check_dam(Site).
+check_dam(Site,CDA) :-
+    entry(Site,2009,cda,CDA).
 check_dam(Site) :-
-    check_dam_Ups(Site),
-    !.
-check_dam(Site) :-
-    check_dam_Dow(Site),
-    !.
+    check_dam(Site,1).
 no_check_dam(Site) :-
-    entry(Site,2009,bm,N1),
-    entry(Site,2009,bv,N2),
-    \+ number(N1),
-    \+ number(N2).
+    check_dam(Site,0).
 
+nat_flood_levees(X,NatFloodLevees) :-
+    flood_levees(X,FloodLevees),
+    crb(X,CRB),
+    NatFloodLevees is FloodLevees*(1-CRB).
+nat_flood_levees(Site) :-
+    nat_flood_levees(Site,1).
+no_nat_flood_levees(Site) :-
+    nat_flood_levees(Site,0).
 
 
 flood_levees(Pair,FloodLevees) :-
@@ -123,7 +117,7 @@ flood_levees(Pair,FloodLevees) :-
     flood_levees(Site,FloodLevees).
 flood_levees(Site,FloodLevees) :-
     not_pair(Site),
-    entry(Site,2009,spr,FloodLevees).
+    entry(Site,2009,rbp,FloodLevees).
 flood_levees(Site) :-
     flood_levees(Site,1).
 no_flood_levees(Site) :-
@@ -140,34 +134,12 @@ useful_disappeared(Site,Year) :-
 
 
 % Other features that may be considered
-check_dam_Ups(Site) :-
-    entry(Site,2009,bm,N),
-    number(N).
-check_dam_Dow(Site) :-
-    entry(Site,2009,bv,N),
-    number(N).
-check_dam_both(Site) :-
-    check_dam_Ups(Site),
-    check_dam_Dow(Site).
-
-
-adult(Site,Year) :-
-    entry(Site,Year,adult,N),
-    integer(N),
-    N > 0.
-no_adult(Site,Year) :-
-    entry(Site,Year,adult,0).
 
 young(Site,Year) :-
-    entry(Site,Year,young,N),
-    integer(N),
-    N > 0.
+    entry(Site,Year,young_bool,1).
 no_young(Site,Year) :-
-    entry(Site,Year,young,0).
+    entry(Site,Year,young_bool,0).
 
-
-old_population(Site) :-
-    entry(Site,2009,pre,1).
 
 wide_channel(Site) :-
     entry(Site,2009,wid,N),
@@ -178,21 +150,6 @@ narrow_channel(Site) :-
     integer(N),
     N =< 70.
 
-wide_corridor(Site) :-
-    entry(Site,2009,cor,N),
-    integer(N),
-    N > 70.
-narrow_corridor(Site) :-
-    entry(Site,2009,cor,N),
-    integer(N),
-    N =< 70.
-
-adult_last(Site,Year) :-
-    LastYear is Year - 1,
-    adult(Site,LastYear).
-no_adult_last(Site,Year) :-
-    LastYear is Year - 1,
-    no_adult(Site,LastYear).
 
 young_last(Site,Year) :-
     LastYear is Year - 1,
@@ -201,23 +158,6 @@ no_young_last(Site,Year) :-
     LastYear is Year - 1,
     no_young(Site,LastYear).
 
-close_to_upstream_dam(Site) :-
-    entry(Site,2009,bm,D),
-    integer(D),
-    D < 1000.
-far_from_upstream_dam(Site) :-
-    entry(Site,2009,bm,D),
-    integer(D),
-    D >= 1000.
-
-close_to_downstream_dam(Site) :-
-    entry(Site,2009,bv,D),
-    integer(D),
-    D < 1000.
-far_from_downstream_dam(Site) :-
-    entry(Site,2009,bv,D),
-    integer(D),
-    D >= 1000.
 
 young_appeared(Site,Year) :-
     no_young_last(Site,Year),
@@ -239,12 +179,14 @@ rv_system(System,Site) :-
     rv_system(System),
     atom_prefix(Site,System).
 
+rv_system(tn,Site) :-
+    atom_prefix(Site,av).
+
 rv_system(bz).
 rv_system(tn).
 rv_system(bl).
 rv_system(vi).
 rv_system(pd).
-rv_system(av).
 
 distance(Site1,Site2,D) :-
     entry(Site1,2009,cox,X1),
@@ -262,20 +204,6 @@ closeby(Site1,Site2) :-
 plant_closeby(Site,Year) :-
     closeby(Site,Site1),
     adult_last(Site1,Year).
-
-safe_UpsD(Site,UpsD) :-
-    entry(Site,2009,bm,UpsD),
-    number(UpsD).
-safe_UpsD(Site,0) :-
-    entry(Site,2009,bm,UpsD),
-    \+ number(UpsD).
-
-safe_DowD(Site,DowD) :-
-    entry(Site,2009,bv,DowD),
-    number(DowD).
-safe_DowD(Site,0) :-
-    entry(Site,2009,bv,DowD),
-    \+ number(DowD).
 
 
 
@@ -302,8 +230,6 @@ atom_mnum(X,N) :-
     atom_codes(X,Codes),
     number_codes(N,Codes).
 atom_mnum(X,X).
-
-
 
 
 

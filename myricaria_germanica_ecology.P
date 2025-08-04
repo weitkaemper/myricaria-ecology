@@ -2,6 +2,7 @@
 :- include(regression).
 
 :- import append/3 from basics.
+:- table channel_models/2, disappeared_models/2.
 
 disappeared_models(SiteYears,SortedResults) :-
     findall(Site-Year,
@@ -21,8 +22,71 @@ channel_models(Sites,SortedResults) :-
     all_lin_models(Sites,FeatureList,log_channel_width,SortedResults).
 
 
+cross(P1,P2,All,Both,Only1,Only2,Neither,E11,E12,E21,E22,Chi2) :-
+    channel_models(Sites,_),
+    basics:length(Sites,All),
+    findall(S,(basics:member(S,Sites),call(P1,S)), P1s),
+    findall(S,(basics:member(S,Sites),call(P2,S)), P2s),
+    findall(S,(basics:member(S,Sites),call(P1,S), call(P2,S)), Boths),
+    basics:append(P1s,P2s,Dupes),
+    sort(Dupes,Ors),
+    basics:length(Ors,Or),
+    basics:length(Boths,Both),
+    basics:length(P1s,P1C),
+    basics:length(P2s, P2C),
+    Only1 is P1C - Both,
+    Only2 is P2C - Both,
+    Neither is All - Or,
+    chi2(Both,Only1,Only2,Neither,E11,E12,E21,E22,Chi2).
+
+cross(P1,P2,P3,All,P1P3,OnlyP3,P1P2,OnlyP2,OnlyP1,None,E11,E12,E21,E22,E31,E32,Chi2) :-
+    channel_models(Sites,_),
+    basics:length(Sites,All),
+    findall(S,(basics:member(S,Sites),call(P1,S),call(P3,S)), P1P3s),
+    findall(S,(basics:member(S,Sites),call(P3,S)), P3s),
+    findall(S,(basics:member(S,Sites),call(P1,S), call(P2,S)), P1P2s),
+    findall(S,(basics:member(S,Sites),call(P2,S)), P2s),
+    findall(S,(basics:member(S,Sites),call(P1,S)), P1s),
+    basics:length(P1P3s,P1P3),
+    basics:length(P3s,P3C),
+    basics:length(P1P2s,P1P2plus),
+    basics:length(P2s, P2plus),
+    basics:length(P1s,P1C),
+    OnlyP1 is P1C - P1P2plus,
+    OnlyP3 is P3C - P1P3,
+    P1P2 is P1P2plus - P1P3,
+    OnlyP2 is P2plus - (P3C + P1P2),
+    None is All - (P1C + OnlyP2 + OnlyP3),
+    chi2(P1P3,OnlyP3,P1P2,OnlyP2,OnlyP1,None,E11,E12,E21,E22,E31,E32,Chi2).
 
 
+
+chi2(Both,Only1,Only2,Neither,E11,E12,E21,E22,Chi2) :-
+    Row1 is Both + Only1,
+    Row2 is Only2 + Neither,
+    Col1 is Both + Only2,
+    Col2 is Only1 + Neither,
+    N is Row1 + Row2,
+    E11 is Row1*Col1 / N,
+    E12 is Row1*Col2 / N,
+    E21 is Row2*Col1 / N,
+    E22 is Row2*Col2 / N,
+    Chi2 is (Both - E11)*(Both - E11)/E11 + (Only1 - E12)*(Only1 - E12)/E12 + (Only2 - E21)*(Only2 - E21)/E21 + (Neither-E22)*(Neither-E22)/E22.
+
+chi2(P1P3,OnlyP3,P1P2,OnlyP2,OnlyP1,None,E11,E12,E21,E22,E31,E32,Chi2) :-
+    Row1 is P1P3 + OnlyP3,
+    Row2 is P1P2 + OnlyP2,
+    Row3 is OnlyP1 + None,
+    Col1 is P1P3 + P1P2 + OnlyP1,
+    Col2 is OnlyP3 + OnlyP2 + None,
+    N is Col1 + Col2,
+    E11 is Row1*Col1 / N,
+    E12 is Row1*Col2 / N,
+    E21 is Row2*Col1 / N,
+    E22 is Row2*Col2 / N,
+    E31 is Row3*Col1 / N,
+    E32 is Row3*Col2 / N,
+    Chi2 is (P1P3 - E11)*(P1P3 - E11)/E11 + (OnlyP3 - E12)*(OnlyP3 - E12)/E12 + (P1P2 - E21)*(P1P2 - E21)/E21 + (OnlyP2-E22)*(OnlyP2-E22)/E22 + (OnlyP1-E31)*(OnlyP1-E31)/E31 + (None - E32)*(None + E32)/E32.
 
 
 
