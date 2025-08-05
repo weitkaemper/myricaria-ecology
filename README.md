@@ -9,7 +9,7 @@ The instructions below assume that XSB has been started on the command line, in 
 After starting XSB, the logistic regression model predicting disappearance of juveniles can be fitted by calling the following command on the XSB command prompt. 
 
 ```
-?-  [myricaria_germanica_ecology],  load_rows('db_myrica.csv'), disappeared_models(_,Results).
+?-  [myricaria_germanica_ecology],  load_rows('combined_dataset_wgs84.csv'), disappeared_models(_,Results).
 ```
 
 This returns a list of terms of the form `result(AIC,LL,Features,Coeff)`, sorted by AIC value, where the coefficients are given in the same order as the features. The final coefficient in the list is the intercept. 
@@ -18,13 +18,13 @@ This returns a list of terms of the form `result(AIC,LL,Features,Coeff)`, sorted
 The log-linear model predicting channel width can be fitted by calling the following command on the XSB command prompt. 
 
 ```
-[myricaria_germanica_ecology],  load_rows('db_myrica.csv'), channel_models(_,Results).
+[myricaria_germanica_ecology],  load_rows('combined_dataset_wgs84.csv'), channel_models(_,Results).
 ```
 or simply 
 ```
 channel_models(_,Results).
 ```
-if `[myricaria_germanica_ecology]` and  `load_rows('db_myrica.csv')` have already been executed in the same XSB session. 
+if `[myricaria_germanica_ecology]` and  `load_rows('combined_dataset_wgs84.csv')` have already been executed in the same XSB session. 
 
 This returns a list of terms of the form `result(AIC,RSS,Features,Coeff)`, sorted by AIC value, where the coefficients are given in the same order as the features. The final coefficient in the list is the intercept. 
 
@@ -46,13 +46,8 @@ The code performing the regression is contained in `regression.P`.
 
 ----
 
-The data included here was first reported in the following contributions:
+The data included here is accessible at:
 
-
-Michielon, B. and T. Sitzia (2019). “Myricaria germanica in quattro bacini idrografici alpini dell’Italia nord-orientale”. In: Gredleriana 19, pp. 35–76.
-
-Sitzia, T., B. Michielon, S. Iacopino, and D. J. Kotze (2016). “Population dynamics of the endangered shrub Myricaria germanica in a regulated Alpine river is influenced by active channel width and distance to check dams”. In: Ecological Engineering 95, pp. 828–838. issn: 0925-8574. doi: https://doi.org/10.1016/j.ecoleng.2016.06.066
-
-
+Michielon, B. and T. Sitzia (2025). Multitemporal field survey data on the presence of _Myricaria germanica_ juveniles across Alpine river sites. Research Data Unipd. (https://doi.org/64010.25430/researchdata.cab.unipd.it.00001622)
 
 [![DOI](https://zenodo.org/badge/1013392331.svg)](https://doi.org/10.5281/zenodo.16460618)
